@@ -1,65 +1,35 @@
 import { useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { createTodo, deleteTodo, todoSelector, updateTodoById } from "./todoSlice"
+import { Button, Col, Form, Input, List, Row, Skeleton, Space } from "antd"
 
 function TodoList() {
     const dispatch = useDispatch()
-    const {todos, loading, hasErrors} = useSelector(todoSelector)
+    const { todos, loading, hasErrors } = useSelector(todoSelector)
+    const [form] = Form.useForm();
 
-    const [formData, setFormData] = useState({
-        id: "",
-        text: "",
-        createdAt: "",
-        updatedAt: "",
-        deletedAt: "",
-    })
     const [editingId, setEditingId] = useState(null)
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
+    const handleSubmit = (formData) => {
         if (editingId) {
-            dispatch(updateTodoById(formData.id, formData))
+            dispatch(updateTodoById(editingId, formData))
             setEditingId(null);
         } else {
             dispatch(createTodo(formData))
         }
-        setFormData({
-            id: "",
-            text: "",
-            createdAt: "",
-            updatedAt: "",
-            deletedAt: "",
-        });
+        form.resetFields();
     }
-
-    const handleFormChange = (event) => {
-        const { name, value } = event.target;
-        setFormData(prevData => ({
-            ...prevData,
-            [name]: value,
-        }));
-    };
 
     const handleCancelEdit = () => {
         setEditingId(null);
-        setFormData({
-            id: "",
-            text: "",
-            createdAt: "",
-            updatedAt: "",
-            deletedAt: "",
-        });
+        form.resetFields();
     }
 
     const handleEdit = (item) => {
         setEditingId(item.id);
-        setFormData({
-            id: item.id,
-            text: item.text,
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt,
-            deletedAt: item.deletedAt,
-        });
+        form.setFieldsValue({
+            text: item.text
+        })
     };
 
     if (loading) {
@@ -69,35 +39,42 @@ function TodoList() {
     }
 
     return (
-        <div>
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    name="text"
-                    placeholder="text"
-                    value={formData.text}
-                    onChange={handleFormChange}
+        <Row style={{ marginRight: 24, marginLeft: 24 }}>
+            <Col span={24}>
+                <Form
+                    form={form}
+                    onFinish={handleSubmit}
+                >
+                    <Form.Item name="text" label="Text">
+                        <Input />
+                    </Form.Item>
+                    <Form.Item>
+                        <Space>
+                            <Button type="primary" htmlType="submit">{editingId ? 'Update' : 'Create'}</Button>
+                            {editingId && <Button htmlType="button" type="link" onClick={handleCancelEdit}>Cancel</Button>}
+                        </Space>
+                    </Form.Item>
+                </Form>
+            </Col>
+            <Col span={24}>
+                <List
+                    loading={loading}
+                    dataSource={todos}
+                    renderItem={(item) => (
+                        <List.Item
+                            actions={[<Button type="primary" onClick={() => handleEdit(item)}>Edit</Button>, <Button danger onClick={() => dispatch(deleteTodo(item.id))}>Delete</Button>]}
+                        >
+                            <Skeleton title={false} active loading={false}>
+                                <List.Item.Meta
+                                    title={item.id}
+                                    description={item.text}
+                                />
+                            </Skeleton>
+                        </List.Item>
+                    )}
                 />
-                <button type="submit">{editingId ? 'Update' : 'Create'}</button>
-                {editingId && <button type="button" onClick={handleCancelEdit}>Cancel</button>}
-
-            </form>
-            <ul>
-                {todos.map(todo => (
-                    <li key={todo.id}>
-                        <div>
-                            <div>
-                                <p>{todo.text}</p>
-                            </div>
-                            <div>
-                                <button onClick={() => handleEdit(todo)}>Edit</button>
-                                <button onClick={() => dispatch(deleteTodo(todo.id))}>Delete</button>
-                            </div>
-                        </div>
-                    </li>
-                ))}
-            </ul>
-        </div>
+            </Col>
+        </Row>
     )
 }
 

@@ -95,7 +95,7 @@ func (a *App) updateTodo(c echo.Context) error {
 	if err := a.db.Model(&t).Where("id = ?", id).Update("text", t.Text).Error; err != nil {
 		return err
 	}
-	return c.NoContent(http.StatusOK)
+	return c.JSON(http.StatusOK, t)
 }
 
 func (a *App) deleteTodo(c echo.Context) error {
@@ -105,36 +105,3 @@ func (a *App) deleteTodo(c echo.Context) error {
 	}
 	return c.NoContent(http.StatusOK)
 }
-
-// e.GET("/show", show)
-// show?team=x-men&member=wolverine
-func show(c echo.Context) error {
-	// Get team and member from the query string
-	team := c.QueryParam("team")
-	member := c.QueryParam("member")
-	return c.String(http.StatusOK, "team:"+team+", member:"+member)
-}
-
-// // Root level middleware
-// e.Use(middleware.Logger())
-// e.Use(middleware.Recover())
-
-// // Group level middleware
-// g := e.Group("/admin")
-// g.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
-//   if username == "joe" && password == "secret" {
-//     return true, nil
-//   }
-//   return false, nil
-// }))
-
-// // Route level middleware
-// track := func(next echo.HandlerFunc) echo.HandlerFunc {
-//     return func(c echo.Context) error {
-//         println("request to /users")
-//         return next(c)
-//     }
-// }
-// e.GET("/users", func(c echo.Context) error {
-//     return c.String(http.StatusOK, "/users")
-// }, track)

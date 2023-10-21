@@ -26,7 +26,10 @@ const todoSlice = createSlice({
             state.hasErrors = true
         },
         updateTodoSuccess: (state, { payload }) => {
-            state.todos = state.todos.map(item => item.id === payload.id ? payload : item)
+            state.todos = state.todos.map(item => item.id === payload.id ? {
+                ...item,
+                text: payload.todo.text
+            } : item)
         },
         deleteTodoSuccess: (state, { payload }) => {
             state.todos = state.todos.filter(item => item.id !== payload)
@@ -83,7 +86,7 @@ export const updateTodoById = (id, todo) => async (dispatch) => {
             headers,
             body: JSON.stringify(todo),
         })
-        dispatch(updateTodoSuccess(todo))
+        dispatch(updateTodoSuccess({ id, todo }))
     } catch (error) {
         dispatch(updateTodoFailure())
     }
