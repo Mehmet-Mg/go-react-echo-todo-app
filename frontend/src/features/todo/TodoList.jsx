@@ -1,9 +1,11 @@
 import { useState } from "react"
-import {connect} from "react-redux"
-import styles from "./TodoList.module.css"
-import { createTodo, deleteTodo, updateTodoById } from "./actions/todosActions"
+import { useDispatch, useSelector } from "react-redux"
+import { createTodo, deleteTodo, todoSelector, updateTodoById } from "./todoSlice"
 
-function TodoList({ dispatch, todos, hasErrors, loading }) {
+function TodoList() {
+    const dispatch = useDispatch()
+    const {todos, loading, hasErrors} = useSelector(todoSelector)
+
     const [formData, setFormData] = useState({
         id: "",
         text: "",
@@ -16,7 +18,6 @@ function TodoList({ dispatch, todos, hasErrors, loading }) {
     const handleSubmit = (event) => {
         event.preventDefault();
         if (editingId) {
-            // onUpdate(formData);
             dispatch(updateTodoById(formData.id, formData))
             setEditingId(null);
         } else {
@@ -61,9 +62,9 @@ function TodoList({ dispatch, todos, hasErrors, loading }) {
         });
     };
 
-    if(loading) {
+    if (loading) {
         return <p>Loading</p>
-    } else if(hasErrors) {
+    } else if (hasErrors) {
         return <p>Error was occured while getting todos</p>
     }
 
@@ -84,7 +85,7 @@ function TodoList({ dispatch, todos, hasErrors, loading }) {
             <ul>
                 {todos.map(todo => (
                     <li key={todo.id}>
-                        <div className={styles.todo}>
+                        <div>
                             <div>
                                 <p>{todo.text}</p>
                             </div>
@@ -100,10 +101,4 @@ function TodoList({ dispatch, todos, hasErrors, loading }) {
     )
 }
 
-const mapStateToProps = (state) => ({
-    loading: state.todos.loading,
-    todos: state.todos.todos,
-    hasErrors: state.todos.hasErrors,
-});
-
-export default connect(mapStateToProps)(TodoList)
+export default TodoList
