@@ -1,7 +1,9 @@
 import { useState } from "react"
+import {connect} from "react-redux"
 import styles from "./TodoList.module.css"
+import { createTodo, deleteTodo, updateTodoById } from "./actions/todosActions"
 
-export default function TodoList({ todos, error, onCreate, onDelete, onUpdate }) {
+function TodoList({ dispatch, todos, hasErrors, loading }) {
     const [formData, setFormData] = useState({
         id: "",
         text: "",
@@ -14,10 +16,11 @@ export default function TodoList({ todos, error, onCreate, onDelete, onUpdate })
     const handleSubmit = (event) => {
         event.preventDefault();
         if (editingId) {
-            onUpdate(formData);
+            // onUpdate(formData);
+            dispatch(updateTodoById(formData.id, formData))
             setEditingId(null);
         } else {
-            onCreate(formData);
+            dispatch(createTodo(formData))
         }
         setFormData({
             id: "",
@@ -58,6 +61,12 @@ export default function TodoList({ todos, error, onCreate, onDelete, onUpdate })
         });
     };
 
+    if(loading) {
+        return <p>Loading</p>
+    } else if(hasErrors) {
+        return <p>Error was occured while getting todos</p>
+    }
+
     return (
         <div>
             <form onSubmit={handleSubmit}>
@@ -81,13 +90,20 @@ export default function TodoList({ todos, error, onCreate, onDelete, onUpdate })
                             </div>
                             <div>
                                 <button onClick={() => handleEdit(todo)}>Edit</button>
-                                <button onClick={() => onDelete(todo.id)}>Delete</button>
+                                <button onClick={() => dispatch(deleteTodo(todo.id))}>Delete</button>
                             </div>
                         </div>
                     </li>
                 ))}
             </ul>
-            {error && <p>{error}</p>}
         </div>
     )
 }
+
+const mapStateToProps = (state) => ({
+    loading: state.todos.loading,
+    todos: state.todos.todos,
+    hasErrors: state.todos.hasErrors,
+});
+
+export default connect(mapStateToProps)(TodoList)
