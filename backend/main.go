@@ -1,8 +1,8 @@
 package main
 
 import (
+	"go-react-echo-todo-app/backend/todo"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -11,7 +11,8 @@ import (
 )
 
 type App struct {
-	db *gorm.DB
+	db       *gorm.DB
+	todoRepo *todo.TodoMySqlGormRepository
 }
 
 func main() {
@@ -22,7 +23,7 @@ func main() {
 	}
 
 	// Migrate the schema
-	db.AutoMigrate(&Todo{})
+	db.AutoMigrate(&todo.Todo{})
 
 	app := &App{
 		db: db,
@@ -38,6 +39,8 @@ func main() {
 		return c.String(http.StatusOK, "Hello World!")
 	})
 
+	app.todoRepo = todo.NewTodoMySqlGormRepository(db)
+
 	e.POST("/todos", app.saveTodo)
 	e.GET("/todos", app.getTodos)
 	e.GET("/todos/:id", app.getTodoById)
@@ -47,60 +50,52 @@ func main() {
 	e.Logger.Fatal(e.Start(":5100"))
 }
 
-type Todo struct {
-	ID        uint           `gorm:"primarykey" json:"id"`
-	CreatedAt time.Time      `json:"createdAt"`
-	UpdatedAt time.Time      `json:"updatedAt"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt,omitempty"`
-	Text      string         `json:"text"`
-}
-
 func (a *App) saveTodo(c echo.Context) error {
-	t := new(Todo)
+	t := new(todo.Todo)
 	if err := c.Bind(t); err != nil {
 		return err
 	}
-	if err := a.db.Create(&t).Error; err != nil {
+	if created, err := a.todoRepo.Save(t); err != nil {
 		return err
+	} else {
+		return c.JSON(http.StatusCreated, created)
 	}
-	return c.JSON(http.StatusCreated, t)
 }
 
 func (a *App) getTodos(c echo.Context) error {
-	var todos []Todo
-	if err := a.db.Find(&todos).Error; err != nil {
+	if todos, err := a.todoRepo.All(); err != nil {
 		return err
+	} else {
+		return c.JSON(http.StatusOK, todos)
 	}
-	return c.JSON(http.StatusOK, todos)
 }
 
 func (a *App) getTodoById(c echo.Context) error {
 	id := c.Param("id")
 
-	var todo Todo
-
-	if err := a.db.First(&todo, id).Error; err != nil {
+	if todo, err := a.todoRepo.GetById(id); err != nil {
 		return err
+	} else {
+		return c.JSON(http.StatusOK, todo)
 	}
-
-	return c.JSON(http.StatusOK, todo)
 }
 
 func (a *App) updateTodo(c echo.Context) error {
 	id := c.Param("id")
-	t := new(Todo)
+	t := new(todo.Todo)
 	if err := c.Bind(t); err != nil {
 		return err
 	}
-	if err := a.db.Model(&t).Where("id = ?", id).Update("text", t.Text).Error; err != nil {
+	if todo, err := a.todoRepo.Update(id, t); err != nil {
 		return err
+	} else {
+		return c.JSON(http.StatusOK, todo)
 	}
-	return c.JSON(http.StatusOK, t)
 }
 
 func (a *App) deleteTodo(c echo.Context) error {
 	id := c.Param("id")
-	if err := a.db.Delete(&Todo{}, id).Error; err != nil {
+	if err := a.todoRepo.Delete(id); err != nil {
 		return err
 	}
 	return c.NoContent(http.StatusOK)
