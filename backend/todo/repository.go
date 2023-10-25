@@ -10,9 +10,9 @@ var (
 )
 
 type Repository interface {
-	Save(todo Todo) (*Todo, error)
+	Save(todo *Todo) (*Todo, error)
 	All() ([]Todo, error)
 	GetById(id string) (*Todo, error)
-	Update(id string, updated Todo) (*Todo, error)
+	Update(id string, updated *Todo) (*Todo, error)
 	Delete(id string) error
 }
